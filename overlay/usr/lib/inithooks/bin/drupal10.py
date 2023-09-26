@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Set Drupal9 admin password and email
+"""Set Drupal10 admin password, email and domain to serve
 
 Option:
     --pass=     unless provided, will ask interactively
@@ -11,7 +11,6 @@ Option:
 import sys
 import getopt
 from libinithooks import inithooks_cache
-import pipes
 import time
 
 from libinithooks.dialog_wrapper import Dialog
@@ -47,43 +46,43 @@ def main():
             email = val
         elif opt == '--domain':
             domain = val
-            
+
     if not password:
         d = Dialog('TurnKey Linux - First boot configuration')
         password = d.get_password(
-            "Drupal9 Password",
-            "Enter new password for the Drupal9 'admin' account.")
+            "Drupal10 Password",
+            "Enter new password for the Drupal10 'admin' account.")
 
     if not email:
         if 'd' not in locals():
             d = Dialog('TurnKey Linux - First boot configuration')
 
         email = d.get_email(
-            "Drupal9 Email",
-            "Enter email address for the Drupal9 'admin' account.",
+            "Drupal10 Email",
+            "Enter email address for the Drupal10 'admin' account.",
 
             "admin@example.com")
 
     inithooks_cache.write('APP_EMAIL', email)
-    
+
     if not domain:
         if 'd' not in locals():
             d = Dialog('TurnKey Linux - First boot configuration')
-            
+
         domain = d.get_input(
-            "Drupal9 Domain",
-            "Enter the domain to serve Drupal9.",
+            "Drupal10 Domain",
+            "Enter the domain to serve Drupal10.",
             DEFAULT_DOMAIN)
-            
+
     if domain == "DEFAULT":
         domain = DEFAULT_DOMAIN
-                
+
     inithooks_cache.write('APP_DOMAIN', domain)
 
     print("Progress...")
     m = MySQL()
-    m.execute('UPDATE drupal9.users_field_data SET mail=%s WHERE name=\"admin\";', (email,))
-    m.execute('UPDATE drupal9.users_field_data SET init=%s WHERE name=\"admin\";', (email,))
+    m.execute('UPDATE drupal10.users_field_data SET mail=%s WHERE name=\"admin\";', (email,))
+    m.execute('UPDATE drupal10.users_field_data SET init=%s WHERE name=\"admin\";', (email,))
     domain = domain.replace('.','\\\\\.')
     subprocess.run([
 	'/usr/lib/inithooks/bin/drupalconf.sh',
@@ -91,6 +90,9 @@ def main():
 	'-p', password,
 	'-d', domain
     ])
-    
+    subprocess.run([
+	'/etc/cron.hourly/drupal10'
+    ])
+
 if __name__ == "__main__":
     main()
